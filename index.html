@@ -1,1 +1,458 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GFR 2017 - Inventory Quiz</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        /* Use Inter font as the default */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Fade-in animation for questions */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        /* Hide arrows on number input */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        /* Custom styles for answer feedback */
+        .correct-answer {
+            background-color: #22c55e !important; /* Tailwind green-500 */
+            color: white !important;
+            border-color: #16a34a !important; /* Tailwind green-600 */
+        }
+
+        .incorrect-answer {
+            background-color: #ef4444 !important; /* Tailwind red-500 */
+            color: white !important;
+            border-color: #dc2626 !important; /* Tailwind red-600 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Global Headings -->
+    <div class="text-center mb-6">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-800">GFR 2017 - Inventory Quiz</h1>
+        <h2 id="quiz-subtitle" class="text-md md:text-lg text-slate-600 mt-2">Complete 15 Questions - Exam Preparation Tool</h2>
+    </div>
+
+    <!-- Main Quiz Container -->
+    <div id="quiz-container" class="bg-white rounded-2xl shadow-xl w-full max-w-3xl">
+        
+        <!-- Quiz Header -->
+        <div id="quiz-header" class="p-6 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                <div class="flex items-center gap-4">
+                    <p class="text-lg font-semibold">Score: <span id="score" class="text-indigo-600">0</span></p>
+                    <button id="reset-score-btn" class="text-sm text-indigo-600 hover:underline focus:outline-none">Reset Score</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label for="jump-input" class="text-sm">Jump to:</label>
+                    <input type="number" id="jump-input" class="w-16 p-1 border border-gray-300 rounded-md text-center">
+                    <button id="jump-btn" class="px-3 py-1 bg-indigo-500 text-white rounded-md text-sm hover:bg-indigo-600">Go</button>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+                <p class="text-sm text-gray-600">Question <span id="question-number" class="font-bold">1</span> of <span id="total-questions" class="font-bold">15</span></p>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-in-out" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Question Area -->
+        <div id="question-area" class="p-6 md:p-8">
+            <h2 id="question-text" class="text-xl md:text-2xl font-semibold mb-6 min-h-[80px]"></h2>
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- Options will be dynamically inserted here -->
+            </div>
+            <p id="feedback-message" class="mt-4 text-center font-semibold min-h-[24px]"></p>
+            
+            <!-- Navigation -->
+            <div class="mt-8 flex justify-between items-center">
+                <button id="prev-btn" class="py-2 px-5 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 disabled:bg-gray-300 disabled:cursor-not-allowed">← Previous</button>
+                <div id="next-btn-container" class="hidden">
+                     <button id="next-btn" class="py-2 px-5 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen (Initially Hidden) -->
+        <div id="result-screen" class="hidden p-8 text-center">
+            <h2 class="text-3xl font-bold mb-4">Quiz Completed!</h2>
+            <p id="final-score" class="text-2xl mb-8">Your final score is 0 out of 15.</p>
+            <button id="restart-btn" class="py-3 px-8 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75">Restart Quiz</button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- QUIZ DATA ---
+            // Extracted from the provided PDF document.
+            const quizData = [
+                {
+                    question: "Who should certify that he has actually received the material and recorded it in the appropriate stock registers?",
+                    options: ["The Store-keeper", "The cashier", "The officer-in-charge of stores", "The head of office"],
+                    answer: "The officer-in-charge of stores"
+                },
+                {
+                    question: "Pick the incorrectly matched pair of asset type and the form in which it is maintained.",
+                    options: [
+                        "Fixed Assets (plant, machinery) - GFR-22", 
+                        "Consumables (stationery, chemicals) - GFR-23", 
+                        "Library books - GFR-24", 
+                        "Assets of historical/artistic value - GFR-24"
+                    ],
+                    answer: "Library books - GFR-24"
+                },
+                {
+                    question: "Calculation of the charges to be recovered from local bodies or contractors for hiring out fixed assets should be based on the:",
+                    options: ["Issue Rate", "Schedule of Rate", "Market Rate", "Historical cost."],
+                    answer: "Historical cost."
+                },
+                {
+                    question: "Fixed assets should be verified at least once in:",
+                    options: ["a six-month", "a year", "a two year", "a three year"],
+                    answer: "a year"
+                },
+                {
+                    question: "A physical verification of all the consumable goods and materials should be undertaken at least once in:",
+                    options: ["a month", "a six-month", "a year", "a two year"],
+                    answer: "a year"
+                },
+                {
+                    question: "A material shall generally be considered surplus if it remains in stock for over ___ unless adequate reasons to treat it otherwise exist.",
+                    options: ["a year", "two years", "three years", "four years"],
+                    answer: "a year"
+                },
+                {
+                    question: "Which statement regarding the physical verification of library books is incorrect?",
+                    options: [
+                        "Complete verification for libraries with not more than 20,000 volumes should be done every year.",
+                        "For libraries with 20,000 to 50,000 volumes, verification should be done at least once in three years.",
+                        "Sample verification for libraries with over 50,000 volumes should be done at intervals of not more than five years.",
+                        "Loss of five volumes per 1000 issued/consulted is reasonable, but books over Rs. 1,000/- must be investigated."
+                    ],
+                    answer: "Sample verification for libraries with over 50,000 volumes should be done at intervals of not more than five years."
+                },
+                {
+                    question: "A report of stores for disposal shall be prepared in which form?",
+                    options: ["GFR 10", "GFR 11", "GFR 14", "GFR 16"],
+                    answer: "GFR 10"
+                },
+                {
+                    question: "Which of the following statements about the disposal of goods is correct?",
+                    options: [
+                        "Only goods with a residual value above Rs. 2,00,000 must be disposed of by advertised tender or public auction.",
+                        "For goods with a residual value less than Rs. 2,00,000, the disposal mode is fixed by rule.",
+                        "Hazardous goods like expired medicines must be destroyed immediately to avoid health hazards.",
+                        "Disposal of goods with security concerns does not require special procedures."
+                    ],
+                    answer: "Hazardous goods like expired medicines must be destroyed immediately to avoid health hazards."
+                },
+                {
+                    question: "If a bid is accepted during an auction, the earnest money taken on the spot from the successful bidder should be:",
+                    options: ["not less than 10%", "not less than 20%", "not less than 25%", "not less than 30%"],
+                    answer: "not less than 25%"
+                },
+                {
+                    question: "If a Ministry/Department cannot sell a surplus item via tender or auction, it may dispose of it at its scrap value with approval from the competent authority in consultation with:",
+                    options: ["HoD", "Finance division", "Accounts Officer", "Legal Division"],
+                    answer: "Finance division"
+                },
+                {
+                    question: "A sale account for goods disposed of should be prepared in Form GFR 11 and signed by the:",
+                    options: ["officer who supervised the sale or auction", "Head of Department", "Head of the Finance division", "Accounts Officer"],
+                    answer: "officer who supervised the sale or auction"
+                },
+                {
+                    question: "Powers to write off losses are available under the:",
+                    options: ["R&P 1983", "GAR 1990", "GFR 2017", "Delegation of Financial Powers Rules."],
+                    answer: "Delegation of Financial Powers Rules."
+                },
+                {
+                    question: "Losses due to depreciation shall be analysed and recorded under all the following heads EXCEPT:",
+                    options: [
+                        "normal fluctuation of market prices", 
+                        "losses due to extra ordinary situations under 'Force Majeure' conditions like fire, flood, enemy action, etc.", 
+                        "lack of foresight in regulating purchases", 
+                        "negligence after purchase."
+                    ],
+                    answer: "losses due to extra ordinary situations under 'Force Majeure' conditions like fire, flood, enemy action, etc."
+                },
+                {
+                    question: "Losses not due to depreciation shall be grouped under which of the following heads: (i) theft or fraud, (ii) neglect, (iii) obsolescence or excess purchase, (iv) damage.",
+                    options: ["i, ii and iii", "i, iii and iv", "ii, iii and iv", "All of the above"],
+                    answer: "All of the above"
+                }
+            ];
+
+            // --- DOM Element References ---
+            const quizContainer = document.getElementById('quiz-container');
+            const quizHeader = document.getElementById('quiz-header');
+            const questionArea = document.getElementById('question-area');
+            const resultScreen = document.getElementById('result-screen');
+            
+            const questionText = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+            const feedbackMessage = document.getElementById('feedback-message');
+            
+            const scoreDisplay = document.getElementById('score');
+            const questionNumberDisplay = document.getElementById('question-number');
+            const totalQuestionsDisplay = document.getElementById('total-questions');
+            const progressBar = document.getElementById('progress-bar');
+            
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const nextBtnContainer = document.getElementById('next-btn-container');
+            const restartBtn = document.getElementById('restart-btn');
+            const resetScoreBtn = document.getElementById('reset-score-btn');
+            
+            const jumpInput = document.getElementById('jump-input');
+            const jumpBtn = document.getElementById('jump-btn');
+
+            const finalScoreDisplay = document.getElementById('final-score');
+            
+            // --- State Variables ---
+            let currentQuestionIndex = 0;
+            let score = 0;
+            let userAnswers = new Array(quizData.length).fill(null);
+
+            // --- Functions ---
+
+            /**
+             * Initializes or restarts the quiz.
+             */
+            function startQuiz() {
+                currentQuestionIndex = 0;
+                score = 0;
+                userAnswers.fill(null);
+                updateScoreDisplay();
+                
+                resultScreen.classList.add('hidden');
+                quizHeader.classList.remove('hidden');
+                questionArea.classList.remove('hidden');
+                quizContainer.classList.remove('p-8'); // remove padding if added for result screen
+                
+                showQuestion();
+            }
+
+            /**
+             * Displays the current question and its options.
+             */
+            function showQuestion() {
+                // Clear previous state
+                feedbackMessage.textContent = '';
+                nextBtnContainer.classList.add('hidden');
+                questionArea.classList.remove('fade-in');
+                void questionArea.offsetWidth; // Trigger reflow to restart animation
+                questionArea.classList.add('fade-in');
+
+                const currentQuestion = quizData[currentQuestionIndex];
+                
+                // Update question text and numbers
+                questionText.textContent = currentQuestion.question;
+                questionNumberDisplay.textContent = currentQuestionIndex + 1;
+                totalQuestionsDisplay.textContent = quizData.length;
+                
+                // Update progress bar
+                const progressPercentage = ((currentQuestionIndex + 1) / quizData.length) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+
+                // Clear old options and create new ones
+                optionsContainer.innerHTML = '';
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.innerHTML = option;
+                    button.classList.add('w-full', 'text-left', 'p-4', 'border', 'border-gray-300', 'rounded-lg', 'transition', 'duration-200', 'hover:bg-indigo-50', 'hover:border-indigo-400', 'focus:outline-none', 'focus:ring-2', 'focus:ring-indigo-300');
+                    button.addEventListener('click', () => selectAnswer(option, button));
+                    optionsContainer.appendChild(button);
+                });
+
+                // Handle button states
+                prevBtn.disabled = currentQuestionIndex === 0;
+
+                // If the user has already answered this question, show the result
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    showPreviousAnswer();
+                }
+            }
+
+            /**
+             * Handles the logic when a user selects an answer.
+             * @param {string} selectedOption - The text of the selected option.
+             * @param {HTMLButtonElement} buttonElement - The button element that was clicked.
+             */
+            function selectAnswer(selectedOption, buttonElement) {
+                const currentQuestion = quizData[currentQuestionIndex];
+                const correctAnswer = currentQuestion.answer;
+                
+                userAnswers[currentQuestionIndex] = selectedOption; // Store user's choice
+
+                // Disable all option buttons
+                Array.from(optionsContainer.children).forEach(btn => {
+                    btn.disabled = true;
+                });
+
+                if (selectedOption === correctAnswer) {
+                    score++;
+                    buttonElement.classList.add('correct-answer');
+                    feedbackMessage.textContent = 'Correct!';
+                    feedbackMessage.classList.add('text-green-600');
+                    feedbackMessage.classList.remove('text-red-600');
+                } else {
+                    buttonElement.classList.add('incorrect-answer');
+                    const correctButton = Array.from(optionsContainer.children).find(btn => btn.innerHTML === correctAnswer);
+                    if (correctButton) {
+                        correctButton.classList.add('correct-answer');
+                    }
+                    const correctOptionLetter = String.fromCharCode(65 + currentQuestion.options.indexOf(correctAnswer));
+                    feedbackMessage.innerHTML = `Wrong! The correct answer is <strong>${correctOptionLetter}: ${correctAnswer}</strong>`;
+                    feedbackMessage.classList.add('text-red-600');
+                    feedbackMessage.classList.remove('text-green-600');
+                }
+
+                updateScoreDisplay();
+                nextBtnContainer.classList.remove('hidden');
+            }
+
+            /**
+             * Restores the visual state of a previously answered question.
+             */
+            function showPreviousAnswer() {
+                const currentQuestion = quizData[currentQuestionIndex];
+                const correctAnswer = currentQuestion.answer;
+                const userAnswer = userAnswers[currentQuestionIndex];
+
+                Array.from(optionsContainer.children).forEach(button => {
+                    button.disabled = true;
+                    if (button.innerHTML === correctAnswer) {
+                        button.classList.add('correct-answer');
+                    }
+                    if (button.innerHTML === userAnswer && userAnswer !== correctAnswer) {
+                        button.classList.add('incorrect-answer');
+                    }
+                });
+
+                if (userAnswer === correctAnswer) {
+                     feedbackMessage.textContent = 'Correct!';
+                     feedbackMessage.classList.add('text-green-600');
+                     feedbackMessage.classList.remove('text-red-600');
+                } else {
+                     const correctOptionLetter = String.fromCharCode(65 + currentQuestion.options.indexOf(correctAnswer));
+                     feedbackMessage.innerHTML = `Wrong! The correct answer is <strong>${correctOptionLetter}: ${correctAnswer}</strong>`;
+                     feedbackMessage.classList.add('text-red-600');
+                     feedbackMessage.classList.remove('text-green-600');
+                }
+
+                nextBtnContainer.classList.remove('hidden');
+            }
+
+            /**
+             * Updates the score display on the screen.
+             */
+            function updateScoreDisplay() {
+                scoreDisplay.textContent = score;
+            }
+            
+            /**
+             * Shows the final result screen.
+             */
+            function showResults() {
+                quizHeader.classList.add('hidden');
+                questionArea.classList.add('hidden');
+                resultScreen.classList.remove('hidden');
+                quizContainer.classList.add('p-8'); // Add padding for better look on result screen
+                
+                finalScoreDisplay.textContent = `Your final score is ${score} out of ${quizData.length}.`;
+            }
+
+            /**
+             * Jumps to a specific question number.
+             */
+            function jumpToQuestion() {
+                const questionNum = parseInt(jumpInput.value);
+                if (questionNum >= 1 && questionNum <= quizData.length) {
+                    currentQuestionIndex = questionNum - 1;
+                    showQuestion();
+                }
+                jumpInput.value = ''; // Clear input after jump
+            }
+
+            // --- Event Listeners ---
+            
+            nextBtn.addEventListener('click', () => {
+                if (currentQuestionIndex < quizData.length - 1) {
+                    currentQuestionIndex++;
+                    showQuestion();
+                } else {
+                    showResults();
+                }
+            });
+
+            prevBtn.addEventListener('click', () => {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    showQuestion();
+                }
+            });
+
+            restartBtn.addEventListener('click', startQuiz);
+
+            resetScoreBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                score = 0;
+                updateScoreDisplay();
+                // This only resets the score display, not the tracked answers.
+                // A full reset would require recalculating the score based on userAnswers array.
+            });
+
+            jumpBtn.addEventListener('click', jumpToQuestion);
+            jumpInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    jumpToQuestion();
+                }
+            });
+
+            // --- Initial Load ---
+            startQuiz();
+        });
+    </script>
+</body>
+</html>
